@@ -48,7 +48,11 @@ int main(int argc, char *argv[]) {
         break_string(input_line, separated_strings);
 
         if (strcmp(separated_strings[0], "exit") == 0 || result == -1) {
-            exit = true;
+            if(separated_strings[1] != NULL){
+                print_error();
+            } else {
+                exit = true;
+            }
         } else if (strcmp(separated_strings[0], "cd") == 0) {
             change_directory(separated_strings);
         } else if (strcmp(separated_strings[0], "path") == 0) {
