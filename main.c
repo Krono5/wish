@@ -35,9 +35,13 @@ int main(int argc, char *argv[]) {
 
     input_line = malloc(buffer_size * sizeof(char));
 
-    // if there is nothing in the command line, attempt to read file
+    // if there is nothing in the command line, attempt to read file and redirect to stdin
     if (argc != 1) {
         stdin = freopen(argv[1], "r", stdin);
+    }
+    if(stdin == NULL){
+        print_error();
+        exit_shell();
     }
     while (exit == false) {
         if (argc == 1) {
@@ -96,7 +100,9 @@ void break_string(char *input, char *components[]) {
 }
 
 void exit_shell() {
-    fclose(stdin);
+    if(stdin != NULL){
+        fclose(stdin);
+    }
     fclose(stdout);
     fclose(stderr);
     free(input_line);
@@ -134,12 +140,14 @@ void change_path(char *components[]) {
 void check_path(char *command_path, char *components[]){
 
     for (int i = 1; i < 30; ++i) {
-        strcpy(command_path, path[i]);
-        strcat(command_path, "/");
-        strcat(command_path, components[0]);
-        if(access(command_path, X_OK) == 0){
-            return;
+        if(path[i] != NULL){
+            strcpy(command_path, path[i]);
+            strcat(command_path, "/");
+            strcat(command_path, components[0]);
+            if(access(command_path, X_OK) == 0){
+                return;
+            }
         }
     }
-    printf("nothing works");
+    print_error();
 }
