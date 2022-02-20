@@ -17,7 +17,7 @@ void change_directory(char *components[]);
 
 void change_path(char *components[]);
 
-void check_path(char *command_path, char *components[]);
+bool check_path(char *command_path, char *components[]);
 
 char *input_line;
 char *path[30];
@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
     if (argc != 1) {
         stdin = freopen(argv[1], "r", stdin);
     }
-    if(stdin == NULL){
+    if (stdin == NULL) {
         print_error();
         exit_shell();
     }
@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
         break_string(input_line, separated_strings);
 
         if (strcmp(separated_strings[0], "exit") == 0 || result == -1) {
-            if(separated_strings[1] != NULL){
+            if (separated_strings[1] != NULL) {
                 print_error();
             } else {
                 exit = true;
@@ -61,16 +61,19 @@ int main(int argc, char *argv[]) {
             change_directory(separated_strings);
         } else if (strcmp(separated_strings[0], "path") == 0) {
             change_path(separated_strings);
-        } else{
+        } else {
             int rc = fork();
 
-            if(rc < 0){
+            if (rc < 0) {
                 // fail to fork
                 exit_shell();
-            } else if(rc == 0){
+            } else if (rc == 0) {
                 // in the universe of the child
-                check_path(command_path, separated_strings);
+                if (check_path(command_path, separated_strings) == false) {
+                    print_error();
+                }
                 execv(command_path, separated_strings);
+                exit = true;
             } else {
                 // in the universe of the parent
                 wait(NULL);
@@ -100,7 +103,7 @@ void break_string(char *input, char *components[]) {
 }
 
 void exit_shell() {
-    if(stdin != NULL){
+    if (stdin != NULL) {
         fclose(stdin);
     }
     fclose(stdout);
@@ -126,28 +129,31 @@ void change_path(char *components[]) {
     bool exit = false;
     int i = 1;
 
+    if(components[1] == NULL){
+        path[1] = "";
+        return;
+    }
     while (exit == false) {
         if (components[i] == NULL) {
             exit = true;
         } else {
-            path[i] = malloc(strlen(components[i]) + 1);
+            path[i] = malloc(strlen(components[i]));
             strcpy(path[i], components[i]);
             i++;
         }
     }
 }
 
-void check_path(char *command_path, char *components[]){
-
+bool check_path(char *command_path, char *components[]) {
     for (int i = 1; i < 30; ++i) {
-        if(path[i] != NULL){
+        if (path[i] != NULL) {
             strcpy(command_path, path[i]);
             strcat(command_path, "/");
             strcat(command_path, components[0]);
-            if(access(command_path, X_OK) == 0){
-                return;
+            if (access(command_path, X_OK) == 0) {
+                return true;
             }
         }
     }
-    print_error();
+    return false;
 }
