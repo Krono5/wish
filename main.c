@@ -1,25 +1,5 @@
-#include <stdio.h>
-#include <stdbool.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <errno.h>
-#include <wait.h>
+#include "wish.h"
 
-void break_string(char *input_string, char *components[]);
-
-void exit_shell();
-
-void print_error();
-
-void change_directory(char *components[]);
-
-void change_path(char *components[]);
-
-bool check_path(char *check_path, char *components[]);
-
-
-#define PATH_SIZE 30
 char *read_string;
 char *path[PATH_SIZE];
 

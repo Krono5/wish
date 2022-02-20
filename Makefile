@@ -3,8 +3,8 @@
 wish: clean main.o
 	gcc -o wish main.o
 
-main.o: main.c
-	gcc -c main.c
+main.o: main.c wish.h
+	gcc -c main.c wish.h
 
 run: main.o
 	./wish
