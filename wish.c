@@ -8,7 +8,7 @@ int main(int argc, char *argv[]) {
     size_t buffer_size = 50;
     bool exit = false;
     char *separated_components[buffer_size];
-    char command_path[buffer_size];
+    char command_path[PATH_SIZE];
 
     // set up initial path
     path[0] = "/bin";
