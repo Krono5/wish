@@ -17,6 +17,8 @@ void change_directory(char *components[]);
 
 void change_path(char *components[]);
 
+void check_path(char *command_path, char *components[]);
+
 char *input_line;
 char *path[30];
 char error_message[30] = "An error has occurred\n";
@@ -26,6 +28,7 @@ int main(int argc, char *argv[]) {
     bool exit = false;
     int line_num = 1;
     char *separated_strings[99];
+    char command_path[50];
 
     // set up initial path
     path[1] = "/bin";
@@ -58,7 +61,8 @@ int main(int argc, char *argv[]) {
                 exit_shell();
             } else if(rc == 0){
                 // in the universe of the child
-                execv(path, separated_strings);
+                check_path(command_path, separated_strings);
+                execv(command_path, separated_strings);
             } else {
                 // in the universe of the parent
                 wait(NULL);
@@ -121,4 +125,17 @@ void change_path(char *components[]) {
             i++;
         }
     }
+}
+
+void check_path(char *command_path, char *components[]){
+
+    for (int i = 1; i < 30; ++i) {
+        strcpy(command_path, path[i]);
+        strcat(command_path, "/");
+        strcat(command_path, components[0]);
+        if(access(command_path, X_OK) == 0){
+            return;
+        }
+    }
+    printf("nothing works");
 }
