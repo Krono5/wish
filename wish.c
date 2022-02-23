@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
             change_path(separated_components);
         } else {
             // any other shell command
-            int return_pid = fork();
+            pid_t return_pid = fork();
             if (return_pid < 0) {
                 // fail to fork
                 exit_shell();
