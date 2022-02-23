@@ -2,6 +2,7 @@
 
 char *read_string;
 char *path[PATH_SIZE];
+const char *operator = ">";
 
 
 int main(int argc, char *argv[]) {
@@ -9,6 +10,7 @@ int main(int argc, char *argv[]) {
     bool exit = false;
     char *separated_components[buffer_size];
     char command_path[PATH_SIZE];
+    FILE* output_file;
 
     // set up initial path
     path[0] = "/bin";
@@ -34,34 +36,49 @@ int main(int argc, char *argv[]) {
         int result = (int) getline(&read_string, &buffer_size, stdin);
         break_string(read_string, separated_components);
 
-        if (strcmp(separated_components[0], "exit") == 0 || result == -1) {
-            if (separated_components[1] != NULL) {
-                print_error();
-            } else {
-                exit = true;
+        if (search_redirect(separated_components) == true){
+            int i = 0;
+            while (strcmp(separated_components[i], operator) != 0){
+                i++;
             }
-        } else if (strcmp(separated_components[0], "cd") == 0) {
-            change_directory(separated_components);
-        } else if (strcmp(separated_components[0], "path") == 0) {
-            change_path(separated_components);
-        } else {
-            // any other shell command
-            pid_t return_pid = fork();
-            if (return_pid < 0) {
-                // fail to fork
+            i++;
+            if(separated_components[i+1]!= NULL || separated_components[i] == NULL){
+                print_error();
                 exit_shell();
-            } else if (return_pid == 0) {
-                // in the universe of the child
-                if (check_path(command_path, separated_components) == false) {
-                    print_error();
-                }
-                execv(command_path, separated_components);
-                exit = true;
-            } else {
-                // in the universe of the parent
-                wait(NULL);
+            } else{
+                output_file = freopen(separated_components[i], "w", stdout);
+                stderr = output_file;
             }
         }
+
+            if (strcmp(separated_components[0], "exit") == 0 || result == -1) {
+                if (separated_components[1] != NULL) {
+                    print_error();
+                } else {
+                    exit = true;
+                }
+            } else if (strcmp(separated_components[0], "cd") == 0) {
+                change_directory(separated_components);
+            } else if (strcmp(separated_components[0], "path") == 0) {
+                change_path(separated_components);
+            } else {
+                // any other shell command
+                pid_t return_pid = fork();
+                if (return_pid < 0) {
+                    // fail to fork
+                    exit_shell();
+                } else if (return_pid == 0) {
+                    // in the universe of the child
+                    if (check_path(command_path, separated_components) == false) {
+                        print_error();
+                    }
+                    execv(command_path, separated_components);
+                    exit = true;
+                } else {
+                    // in the universe of the parent
+                    wait(NULL);
+                }
+            }
     }
 
     exit_shell();
@@ -164,4 +181,23 @@ bool check_path(char *check_path, char *components[]) {
         }
     }
     return false;
+}
+
+bool search_redirect(char *components[]) {
+    int i = 0;
+    int num_operators = 0;
+    while (components[i] != NULL) {
+        if (strcmp(components[i], operator) == 0) {
+            num_operators++;
+        }
+        i++;
+    }
+    if (num_operators == 1) {
+        return true;
+    } else if (num_operators == 0) {
+        return false;
+    } else {
+        print_error();
+        return false;
+    }
 }
