@@ -198,6 +198,7 @@ bool search_redirect(char *components[]) {
         return false;
     } else {
         print_error();
+        exit_shell();
         return false;
     }
 }
