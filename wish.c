@@ -4,13 +4,18 @@ char *read_string;
 char *path[PATH_SIZE];
 const char *operator = ">";
 
+enum redirection {
+    none,
+    standalone,
+    internal
+};
+
 
 int main(int argc, char *argv[]) {
     size_t buffer_size = 50;
     bool exit = false;
     char *separated_components[buffer_size];
     char command_path[PATH_SIZE];
-    FILE *output_file;
     char *redirect_args = NULL;
 
     // set up initial path
@@ -37,9 +42,10 @@ int main(int argc, char *argv[]) {
         int result = (int) getline(&read_string, &buffer_size, stdin);
         break_string(read_string, separated_components);
 
-        if (search_redirect(redirect_args, separated_components)) {
+        //----------------Checking for redirects----------------
+        if (search_redirect( separated_components) == standalone) {
             int i = 0;
-            while (strcmp(separated_components[i], redirect_args) != 0) {
+            while (strcmp(separated_components[i], operator) != 0) {
                 i++;
             }
             i++;
@@ -47,10 +53,17 @@ int main(int argc, char *argv[]) {
                 print_error();
                 exit_shell();
             } else {
-                output_file = freopen(redirect_args, "w", stdout);
-                stderr = output_file;
+                redirect_output(redirect_args);
             }
+        } else if(search_redirect(separated_components) == internal){
+            int i = 0;
+            while (strstr(separated_components[i], operator) == NULL){
+                i++;
+            }
+            redirect_args = strstr(separated_components[i], operator) + 1;
+            redirect_output(redirect_args);
         }
+        //---------------------------------------------------------
 
         if (strcmp(separated_components[0], "exit") == 0 || result == -1) {
             if (separated_components[1] != NULL) {
@@ -184,26 +197,36 @@ bool check_path(char *check_path, char *components[]) {
     return false;
 }
 
-bool search_redirect(char *redirect_args, char *components[]) {
+enum redirection search_redirect(char *components[]) {
     int i = 0;
     int num_operators = 0;
+    bool internal_flag = false;
     while (components[i] != NULL) {
         if (strcmp(components[i], operator) == 0) {
             num_operators++;
-            redirect_args = components[i];
         } else if (strstr(components[i], operator) != NULL) {
+            internal_flag = true;
             num_operators++;
-            redirect_args = strstr(components[i], operator) + 1;
         }
         i++;
     }
     if (num_operators == 1) {
-        return true;
+        if (internal_flag){
+            return internal;
+        } else{
+            return standalone;
+        }
     } else if (num_operators == 0) {
-        return false;
+        return none;
     } else {
         print_error();
         exit_shell();
-        return false;
+        return none;
     }
+}
+
+void redirect_output(char* redirect_args){
+    FILE *output_file;
+    output_file = freopen(redirect_args, "w", stdout);
+    stderr = output_file;
 }
