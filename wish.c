@@ -10,7 +10,8 @@ int main(int argc, char *argv[]) {
     bool exit = false;
     char *separated_components[buffer_size];
     char command_path[PATH_SIZE];
-    FILE* output_file;
+    FILE *output_file;
+    char *redirect_args = NULL;
 
     // set up initial path
     path[0] = "/bin";
@@ -36,49 +37,49 @@ int main(int argc, char *argv[]) {
         int result = (int) getline(&read_string, &buffer_size, stdin);
         break_string(read_string, separated_components);
 
-        if (search_redirect(separated_components) == true){
+        if (search_redirect(redirect_args, separated_components)) {
             int i = 0;
-            while (strcmp(separated_components[i], operator) != 0){
+            while (strcmp(separated_components[i], redirect_args) != 0) {
                 i++;
             }
             i++;
-            if(separated_components[i+1]!= NULL || separated_components[i] == NULL){
+            if (separated_components[i + 1] != NULL || separated_components[i] == NULL) {
                 print_error();
                 exit_shell();
-            } else{
-                output_file = freopen(separated_components[i], "w", stdout);
+            } else {
+                output_file = freopen(redirect_args, "w", stdout);
                 stderr = output_file;
             }
         }
 
-            if (strcmp(separated_components[0], "exit") == 0 || result == -1) {
-                if (separated_components[1] != NULL) {
-                    print_error();
-                } else {
-                    exit = true;
-                }
-            } else if (strcmp(separated_components[0], "cd") == 0) {
-                change_directory(separated_components);
-            } else if (strcmp(separated_components[0], "path") == 0) {
-                change_path(separated_components);
+        if (strcmp(separated_components[0], "exit") == 0 || result == -1) {
+            if (separated_components[1] != NULL) {
+                print_error();
             } else {
-                // any other shell command
-                pid_t return_pid = fork();
-                if (return_pid < 0) {
-                    // fail to fork
-                    exit_shell();
-                } else if (return_pid == 0) {
-                    // in the universe of the child
-                    if (check_path(command_path, separated_components) == false) {
-                        print_error();
-                    }
-                    execv(command_path, separated_components);
-                    exit = true;
-                } else {
-                    // in the universe of the parent
-                    wait(NULL);
-                }
+                exit = true;
             }
+        } else if (strcmp(separated_components[0], "cd") == 0) {
+            change_directory(separated_components);
+        } else if (strcmp(separated_components[0], "path") == 0) {
+            change_path(separated_components);
+        } else {
+            // any other shell command
+            pid_t return_pid = fork();
+            if (return_pid < 0) {
+                // fail to fork
+                exit_shell();
+            } else if (return_pid == 0) {
+                // in the universe of the child
+                if (check_path(command_path, separated_components) == false) {
+                    print_error();
+                }
+                execv(command_path, separated_components);
+                exit = true;
+            } else {
+                // in the universe of the parent
+                wait(NULL);
+            }
+        }
     }
 
     exit_shell();
@@ -183,12 +184,16 @@ bool check_path(char *check_path, char *components[]) {
     return false;
 }
 
-bool search_redirect(char *components[]) {
+bool search_redirect(char *redirect_args, char *components[]) {
     int i = 0;
     int num_operators = 0;
     while (components[i] != NULL) {
         if (strcmp(components[i], operator) == 0) {
             num_operators++;
+            redirect_args = components[i];
+        } else if (strstr(components[i], operator) != NULL) {
+            num_operators++;
+            redirect_args = strstr(components[i], operator) + 1;
         }
         i++;
     }

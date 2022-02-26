@@ -26,7 +26,7 @@ void change_path(char *components[]);
 
 bool check_path(char *check_path, char *components[]);
 
-bool search_redirect(char *components[]);
+bool search_redirect(char *redirect_args, char *components[]);
 
 
 #define PATH_SIZE 30
