@@ -30,6 +30,8 @@ enum redirection search_redirect(char *components[]);
 
 void redirect_output(char *redirect_args);
 
+void restructure_components(char *components[]);
+
 #define PATH_SIZE 30
 
 #endif //WISH_H

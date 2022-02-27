@@ -5,11 +5,10 @@ char *path[PATH_SIZE];
 const char *operator = ">";
 
 enum redirection {
-    none,
-    standalone,
-    internal
+    none,       // no redirection
+    standalone, // redirection with spaces
+    internal    // redirection without spaces
 };
-
 
 int main(int argc, char *argv[]) {
     size_t buffer_size = 50;
@@ -21,8 +20,11 @@ int main(int argc, char *argv[]) {
 
     // set up initial path
     path[0] = "/bin";
-
     read_string = malloc(buffer_size * sizeof(char));
+
+    for (int i = 0; i < buffer_size; ++i) {
+        separated_components[i] = NULL;
+    }
 
     // if there is nothing in the command line, attempt to read file and redirect to stdin
     if (argc != 1) {
@@ -44,7 +46,10 @@ int main(int argc, char *argv[]) {
         break_string(read_string, separated_components);
 
         //----------------Checking for redirects----------------
-        if (search_redirect(separated_components) == standalone) {
+        if (search_redirect(separated_components) == standalone || search_redirect(separated_components) == internal) {
+            if (search_redirect(separated_components) == internal) {
+                restructure_components(separated_components);
+            }
             int i = 0;
             while (strcmp(separated_components[i], operator) != 0) {
                 i++;
@@ -54,16 +59,8 @@ int main(int argc, char *argv[]) {
                 print_error();
                 exit_shell();
             } else {
-                redirect_output(NULL);
+//                redirect_output(separated_components[i]);
             }
-        } else if (search_redirect(separated_components) == internal) {
-            int i = 0;
-            while (strstr(separated_components[i], operator) == NULL) {
-                i++;
-            }
-            strcpy(redirect_args, strtok(separated_components[i], operator));
-            redirect_output(redirect_args);
-            strcpy(separated_components[i], strtok(separated_components[i], operator));
         }
         //---------------------------------------------------------
 
@@ -227,7 +224,22 @@ enum redirection search_redirect(char *components[]) {
     }
 }
 
+void restructure_components(char *components[]) {
+    int i = 0;
+    char tempstring1[PATH_SIZE];
+    char tempstring2[PATH_SIZE];
+    while (strstr(components[i], operator) == NULL) {
+        i++;
+    }
+    strcpy(components[i], strtok(components[i], operator));
+    strcpy(tempstring1, operator);
+    strcpy(tempstring2, strtok(NULL, operator));
+
+    components[i+1] = tempstring1;
+    components[i+2] = tempstring2;
+}
+
 void redirect_output(char *redirect_args) {
-    freopen("testoutput.txt", "w+", stdout);
-    freopen("testerr.txt", "w+", stderr);
+    freopen(redirect_args, "w+", stdout);
+    freopen(redirect_args, "w+", stderr);
 }
