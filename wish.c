@@ -95,22 +95,23 @@ int main(int argc, char *argv[]) {
             change_path(separated_components);
         } else {
             // any other shell command
+            if (check_path(command_path, separated_components) == false) {
+                print_error();
+            }
             pid_t return_pid = fork();
             if (return_pid < 0) {
                 // fail to fork
                 exit_shell();
             } else if (return_pid == 0) {
                 // in the universe of the child
-                if (check_path(command_path, separated_components) == false) {
-                    print_error();
-                }
-                int fw = open(redirect_args, O_WRONLY);
-                dup2(fw, STDOUT_FILENO);
-                dup2(fw, STDERR_FILENO);
+//                close(STDOUT_FILENO);
+//                close(STDERR_FILENO);
+                creat(redirect_args, S_IRWXU);
+//                dup2(fw, STDOUT_FILENO);
+//                dup2(fw, STDERR_FILENO);
 
                 execv(command_path, separated_components);
 
-                close(fw);
                 exit = true;
             } else {
                 // in the universe of the parent
