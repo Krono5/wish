@@ -88,13 +88,13 @@ int main(int argc, char *argv[]) {
                 if (check_path(command_path, separated_components) == false) {
                     print_error();
                 }
-
                 int fw = open(redirect_args, O_WRONLY);
                 dup2(fw, STDOUT_FILENO);
                 dup2(fw, STDERR_FILENO);
-                close(fw);
 
                 execv(command_path, separated_components);
+
+                close(fw);
                 exit = true;
             } else {
                 // in the universe of the parent
