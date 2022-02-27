@@ -1,4 +1,5 @@
 #include <fcntl.h>
+#include <ctype.h>
 #include "wish.h"
 
 char *read_string;
@@ -45,22 +46,37 @@ int main(int argc, char *argv[]) {
         }
         // Get input from stdin
         int result = (int) getline(&read_string, &buffer_size, stdin);
+        int i;
+        for (i = 0; i < strlen(read_string); i++) {
+            if(isspace(read_string[i]) == 0){
+                break;
+            }
+        }
+        if(i == strlen(read_string)){
+            continue;
+        }
+        for (i = 0; i < strlen(read_string); i++) {
+            if(isspace(read_string[i]) == 0){
+                break;
+            }
+        }
+        read_string = read_string + i;
         break_string(read_string, separated_components);
 
         //----------------Checking for redirects----------------
         if (search_redirect(separated_components) == standalone) {
 
-            int i = 0;
-            while (strcmp(separated_components[i], operator) != 0) {
-                i++;
+            int j = 0;
+            while (strcmp(separated_components[j], operator) != 0) {
+                j++;
             }
-            if (i == 0 || separated_components[i + 2] != NULL || separated_components[i + 1] == NULL) {
+            if (j == 0 || separated_components[j + 2] != NULL || separated_components[j + 1] == NULL) {
                 print_error();
                 exit_shell();
             } else {
-                redirect_args = realloc(redirect_args, sizeof (separated_components[i+1]));
-                strcpy(redirect_args, separated_components[i + 1]);
-//                redirect_output(separated_components[i+1]);
+                redirect_args = realloc(redirect_args, sizeof (separated_components[j + 1]));
+                strcpy(redirect_args, separated_components[j + 1]);
+//                redirect_output(separated_components[j+1]);
             }
         } else if (search_redirect(separated_components) == internal) {
             restructure_components(separated_components);
@@ -123,6 +139,8 @@ void break_string(char *input_string, char *components[]) {
         components[i] = strsep(&input_string, &delimiter);
         if (components[i] == NULL) {
             exit = true;
+        } else if(strcmp(components[i], "") == 0){
+            components[i] = NULL;
         } else {
             i++;
         }
