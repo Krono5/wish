@@ -21,15 +21,18 @@ int main(int argc, char *argv[]) {
 
     // if there is nothing in the command line, attempt to read file and redirect to stdin
     if (argc != 1) {
-        stdin = freopen(argv[1], "r", stdin);
+        FILE * input_file = NULL;
+        input_file = freopen(argv[1], "r", stdin);
         if(argv[2] != NULL){
             // Multiple batch files
             print_error();
             return (EXIT_FAILURE);
-        }else if (stdin == NULL) {
+        }else if (input_file == NULL) {
             // Could not open file
             print_error();
-            exit_shell();
+            return (EXIT_FAILURE);
+        } else{
+            stdin = input_file;
         }
     }
 

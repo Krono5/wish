@@ -10,7 +10,7 @@ run: main.o
 	./wish
 
 clean:
-	rm -f $(OBJS) $(OUT)
+	-rm *.o $(OBJS) *.h.gch
 
 test: wish
 	./test-wish.sh
