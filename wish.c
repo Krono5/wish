@@ -59,7 +59,12 @@ int main(int argc, char *argv[]) {
                 print_error();
                 exit_shell();
             } else {
+                freopen(separated_components[i], "w+", stdout);
+//                freopen(separated_components[i], "w+", stderr);
 //                redirect_output(separated_components[i]);
+                separated_components[i-1] = NULL;
+                separated_components[i] = NULL;
+                separated_components[i+1] = NULL;
             }
         }
         //---------------------------------------------------------
@@ -240,6 +245,6 @@ void restructure_components(char *components[]) {
 }
 
 void redirect_output(char *redirect_args) {
-    freopen(redirect_args, "w+", stdout);
-    freopen(redirect_args, "w+", stderr);
+    freopen("", "w+", stdout);
+    freopen("", "w+", stderr);
 }
