@@ -132,7 +132,6 @@ void exit_shell() {
     fclose(stdin);
     fclose(stdout);
     fclose(stderr);
-    free(read_string);
     free(redirect_args);
     exit(EXIT_SUCCESS);
 }
