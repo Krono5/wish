@@ -1,17 +1,9 @@
-#include <fcntl.h>
-#include <ctype.h>
 #include "wish.h"
 
 char *read_string;
 char *path[PATH_SIZE];
 const char *operator = ">";
 char *redirect_args;
-
-enum redirection {
-    none,       // no redirection
-    standalone, // redirection with spaces
-    internal    // redirection without spaces
-};
 
 int main(int argc, char *argv[]) {
     size_t buffer_size = 50;
@@ -23,7 +15,6 @@ int main(int argc, char *argv[]) {
     // set up initial path
     path[0] = "/bin";
     read_string = malloc(buffer_size * sizeof(char));
-    redirect_args = malloc(sizeof(char));
 
     for (int i = 0; i < buffer_size; ++i) {
         separated_components[i] = NULL;
@@ -48,15 +39,15 @@ int main(int argc, char *argv[]) {
         int result = (int) getline(&read_string, &buffer_size, stdin);
         int i;
         for (i = 0; i < strlen(read_string); i++) {
-            if(isspace(read_string[i]) == 0){
+            if (isspace(read_string[i]) == 0) {
                 break;
             }
         }
-        if(i == strlen(read_string)){
+        if (i == strlen(read_string)) {
             continue;
         }
         for (i = 0; i < strlen(read_string); i++) {
-            if(isspace(read_string[i]) == 0){
+            if (isspace(read_string[i]) == 0) {
                 break;
             }
         }
@@ -64,23 +55,7 @@ int main(int argc, char *argv[]) {
         break_string(read_string, separated_components);
 
         //----------------Checking for redirects----------------
-        if (search_redirect(separated_components) == standalone) {
-
-            int j = 0;
-            while (strcmp(separated_components[j], operator) != 0) {
-                j++;
-            }
-            if (j == 0 || separated_components[j + 2] != NULL || separated_components[j + 1] == NULL) {
-                print_error();
-                exit_shell();
-            } else {
-                redirect_args = realloc(redirect_args, sizeof (separated_components[j + 1]));
-                strcpy(redirect_args, separated_components[j + 1]);
-//                redirect_output(separated_components[j+1]);
-            }
-        } else if (search_redirect(separated_components) == internal) {
-            restructure_components(separated_components);
-        }
+        bool redirection = is_redirection(separated_components);
         //---------------------------------------------------------
 
         if (strcmp(separated_components[0], "exit") == 0 || result == -1) {
@@ -104,14 +79,10 @@ int main(int argc, char *argv[]) {
                 exit_shell();
             } else if (return_pid == 0) {
                 // in the universe of the child
-//                close(STDOUT_FILENO);
-//                close(STDERR_FILENO);
-                creat(redirect_args, S_IRWXU);
-//                dup2(fw, STDOUT_FILENO);
-//                dup2(fw, STDERR_FILENO);
-
+                if (redirection) {
+                    creat(redirect_args, S_IRWXU);
+                }
                 execv(command_path, separated_components);
-
                 exit = true;
             } else {
                 // in the universe of the parent
@@ -140,7 +111,7 @@ void break_string(char *input_string, char *components[]) {
         components[i] = strsep(&input_string, &delimiter);
         if (components[i] == NULL) {
             exit = true;
-        } else if(strcmp(components[i], "") == 0){
+        } else if (strcmp(components[i], "") == 0) {
             components[i] = NULL;
         } else {
             i++;
@@ -225,7 +196,7 @@ bool check_path(char *check_path, char *components[]) {
     return false;
 }
 
-enum redirection search_redirect(char *components[]) {
+bool is_redirection(char *components[]) {
     int i = 0;
     int num_operators = 0;
     bool internal_flag = false;
@@ -238,18 +209,32 @@ enum redirection search_redirect(char *components[]) {
         }
         i++;
     }
+
     if (num_operators == 1) {
         if (internal_flag) {
-            return internal;
+            // SPACES IN BETWEEN >
+            restructure_components(components);
         } else {
-            return standalone;
+            // NO SPACES IN BETWEEN >
+            int index = 0;
+            while (strcmp(components[index], operator) != 0) {
+                index++;
+            }
+            if (index == 0 || components[index + 2] != NULL || components[index + 1] == NULL) {
+                print_error();
+                exit_shell();
+            } else {
+                redirect_args = realloc(redirect_args, sizeof(components[index + 1]));
+                strcpy(redirect_args, components[index + 1]);
+            }
         }
+        return true;
     } else if (num_operators == 0) {
-        return none;
+        return false;
     } else {
         print_error();
         exit_shell();
-        return none;
+        return false;
     }
 }
 
@@ -259,15 +244,7 @@ void restructure_components(char *components[]) {
         i++;
     }
     strcpy(components[i], strtok(components[i], operator));
-//    redirect_output(strtok(NULL , operator));
-    char* tempstr = strtok(NULL, operator);
+    char *tempstr = strtok(NULL, operator);
     redirect_args = realloc(redirect_args, sizeof(tempstr));
     strcpy(redirect_args, tempstr);
 }
-
-//void redirect_output(char *redirect_args) {
-//    int fw = creat(redirect_args, O_WRONLY);
-//    dup2(fw, STDOUT_FILENO);
-//    dup2(fw, STDERR_FILENO);
-//    close(fw);
-//}

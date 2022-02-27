@@ -9,7 +9,8 @@
 #include <unistd.h>
 #include <errno.h>
 #include <wait.h>
-
+#include <fcntl.h>
+#include <ctype.h>
 
 #ifndef WISH_H
 #define WISH_H
@@ -26,9 +27,7 @@ void change_path(char *components[]);
 
 bool check_path(char *check_path, char *components[]);
 
-enum redirection search_redirect(char *components[]);
-
-//void redirect_output(char *redirect_args);
+bool is_redirection(char *components[]);
 
 void restructure_components(char *components[]);
 
