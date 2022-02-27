@@ -28,7 +28,7 @@ bool check_path(char *check_path, char *components[]);
 
 enum redirection search_redirect(char *components[]);
 
-void redirect_output(char *redirect_args);
+//void redirect_output(char *redirect_args);
 
 void restructure_components(char *components[]);
 

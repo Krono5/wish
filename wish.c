@@ -4,6 +4,7 @@
 char *read_string;
 char *path[PATH_SIZE];
 const char *operator = ">";
+char *redirect_args;
 
 enum redirection {
     none,       // no redirection
@@ -16,12 +17,12 @@ int main(int argc, char *argv[]) {
     bool exit = false;
     char *separated_components[buffer_size];
     char command_path[PATH_SIZE];
-    char *redirect_args = NULL;
 
 
     // set up initial path
     path[0] = "/bin";
     read_string = malloc(buffer_size * sizeof(char));
+    redirect_args = malloc(sizeof(char));
 
     for (int i = 0; i < buffer_size; ++i) {
         separated_components[i] = NULL;
@@ -47,23 +48,22 @@ int main(int argc, char *argv[]) {
         break_string(read_string, separated_components);
 
         //----------------Checking for redirects----------------
-        if (search_redirect(separated_components) == standalone || search_redirect(separated_components) == internal) {
-            if (search_redirect(separated_components) == internal) {
-                restructure_components(separated_components);
-            }
+        if (search_redirect(separated_components) == standalone) {
+
             int i = 0;
             while (strcmp(separated_components[i], operator) != 0) {
                 i++;
             }
-            if (i == 0 || separated_components[i + 2] != NULL || separated_components[i +1] == NULL) {
+            if (i == 0 || separated_components[i + 2] != NULL || separated_components[i + 1] == NULL) {
                 print_error();
                 exit_shell();
             } else {
-                redirect_output(separated_components[i+1]);
-                separated_components[i] = NULL;
-                separated_components[i+1] = NULL;
-                separated_components[i+2] = NULL;
+                redirect_args = realloc(redirect_args, sizeof (separated_components[i+1]));
+                strcpy(redirect_args, separated_components[i + 1]);
+//                redirect_output(separated_components[i+1]);
             }
+        } else if (search_redirect(separated_components) == internal) {
+            restructure_components(separated_components);
         }
         //---------------------------------------------------------
 
@@ -88,6 +88,12 @@ int main(int argc, char *argv[]) {
                 if (check_path(command_path, separated_components) == false) {
                     print_error();
                 }
+
+                int fw = open(redirect_args, O_WRONLY);
+                dup2(fw, STDOUT_FILENO);
+                dup2(fw, STDERR_FILENO);
+                close(fw);
+
                 execv(command_path, separated_components);
                 exit = true;
             } else {
@@ -131,6 +137,7 @@ void exit_shell() {
     fclose(stdout);
     fclose(stderr);
     free(read_string);
+    free(redirect_args);
     exit(EXIT_SUCCESS);
 }
 
@@ -229,21 +236,19 @@ enum redirection search_redirect(char *components[]) {
 
 void restructure_components(char *components[]) {
     int i = 0;
-    char tempstring1[PATH_SIZE];
-    char tempstring2[PATH_SIZE];
     while (strstr(components[i], operator) == NULL) {
         i++;
     }
     strcpy(components[i], strtok(components[i], operator));
-    strcpy(tempstring1, operator);
-    strcpy(tempstring2, strtok(NULL, operator));
-
-    components[i+1] = tempstring1;
-    components[i+2] = tempstring2;
+//    redirect_output(strtok(NULL , operator));
+    char* tempstr = strtok(NULL, operator);
+    redirect_args = realloc(redirect_args, sizeof(tempstr));
+    strcpy(redirect_args, tempstr);
 }
 
-void redirect_output(char *redirect_args) {
-    int fw = open(redirect_args, O_WRONLY);
-    dup2(fw, STDOUT_FILENO);
-    dup2(fw, STDERR_FILENO);
-}
+//void redirect_output(char *redirect_args) {
+//    int fw = creat(redirect_args, O_WRONLY);
+//    dup2(fw, STDOUT_FILENO);
+//    dup2(fw, STDERR_FILENO);
+//    close(fw);
+//}
