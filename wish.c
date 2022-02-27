@@ -1,3 +1,4 @@
+#include <fcntl.h>
 #include "wish.h"
 
 char *read_string;
@@ -54,17 +55,14 @@ int main(int argc, char *argv[]) {
             while (strcmp(separated_components[i], operator) != 0) {
                 i++;
             }
-            i++;
-            if (separated_components[i + 1] != NULL || separated_components[i] == NULL) {
+            if (i == 0 || separated_components[i + 2] != NULL || separated_components[i +1] == NULL) {
                 print_error();
                 exit_shell();
             } else {
-                freopen(separated_components[i], "w+", stdout);
-//                freopen(separated_components[i], "w+", stderr);
-//                redirect_output(separated_components[i]);
-                separated_components[i-1] = NULL;
+                redirect_output(separated_components[i+1]);
                 separated_components[i] = NULL;
                 separated_components[i+1] = NULL;
+                separated_components[i+2] = NULL;
             }
         }
         //---------------------------------------------------------
@@ -245,6 +243,7 @@ void restructure_components(char *components[]) {
 }
 
 void redirect_output(char *redirect_args) {
-    freopen("", "w+", stdout);
-    freopen("", "w+", stderr);
+    int fw = open(redirect_args, O_WRONLY);
+    dup2(fw, STDOUT_FILENO);
+    dup2(fw, STDERR_FILENO);
 }
