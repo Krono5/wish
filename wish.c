@@ -11,7 +11,6 @@ int main(int argc, char *argv[]) {
     char *separated_components[buffer_size];
     char command_path[PATH_SIZE];
 
-
     // set up initial path
     path[0] = "/bin";
     read_string = malloc(buffer_size * sizeof(char));
@@ -24,7 +23,7 @@ int main(int argc, char *argv[]) {
     if (argc != 1) {
         stdin = freopen(argv[1], "r", stdin);
         // Could not open file
-        if (stdin == NULL) {
+        if (stdin == NULL || argv[2] != NULL) {
             print_error();
             exit_shell();
         }
