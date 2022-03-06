@@ -128,7 +128,6 @@ void exit_shell() {
     fclose(stdout);
     fclose(stderr);
     free(redirect_args);
-//    free(read_string);
     exit(EXIT_SUCCESS);
 }
 
