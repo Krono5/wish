@@ -87,8 +87,13 @@ int main(int argc, char *argv[]) {
     return EXIT_SUCCESS;
 }
 
-int getInput(size_t buffer_size){
-    return (int) getline(&read_string, &buffer_size, stdin);
+char * getInput(size_t buffer_size, char* input_line){
+    int result = (int)getline(&input_line, &buffer_size, stdin);
+    if(result == -1){
+        return NULL;
+    } else{
+        return input_line;
+    }
 }
 
 /**
@@ -123,7 +128,7 @@ void exit_shell() {
     fclose(stdout);
     fclose(stderr);
     free(redirect_args);
-    free(read_string);
+//    free(read_string);
     exit(EXIT_SUCCESS);
 }
 
@@ -250,8 +255,8 @@ char * format_string(char* input_line, size_t buffer_size){
     int stringIndex;
     while (exit == false){
         stringIndex = 0;
-        int result = getInput(buffer_size);
-        if(result == -1){
+        input_line = getInput(buffer_size, input_line);
+        if(input_line == NULL){
             exit_shell();
         }
         while (isspace(input_line[stringIndex]) != 0){

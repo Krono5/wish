@@ -33,7 +33,7 @@ void restructure_components(char *components[]);
 
 char *format_string(char *input_line, size_t buffer_size);
 
-int getInput(size_t buffer_size);
+char *getInput(size_t buffer_size, char *input_line);
 
 
 #define PATH_SIZE 30
