@@ -247,20 +247,19 @@ void restructure_components(char *components[]) {
 
 char * format_string(char* input_line, size_t buffer_size){
     bool exit = false;
-    int i;
+    int stringIndex;
     while (exit == false){
+        stringIndex = 0;
         int result = getInput(buffer_size);
         if(result == -1){
             exit_shell();
         }
-        for (i = 0; i < strlen(read_string); i++) {
-            if (isspace(read_string[i]) == 0) {
-                break;
-            }
+        while (isspace(input_line[stringIndex]) != 0){
+            stringIndex++;
         }
-        if (i != strlen(read_string)) {
+        if (stringIndex != strlen(input_line)) {
             exit = true;
         }
     }
-    return input_line + i;
+    return input_line + stringIndex;
 }
