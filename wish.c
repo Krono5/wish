@@ -42,29 +42,15 @@ int main(int argc, char *argv[]) {
             printf("wish> ");
         }
         // Get input from stdin
-        int result = (int) getline(&read_string, &buffer_size, stdin);
-        int i;
-        for (i = 0; i < strlen(read_string); i++) {
-            if (isspace(read_string[i]) == 0) {
-                break;
-            }
-        }
-        if (i == strlen(read_string)) {
-            continue;
-        }
-        for (i = 0; i < strlen(read_string); i++) {
-            if (isspace(read_string[i]) == 0) {
-                break;
-            }
-        }
-        read_string = read_string + i;
-        break_string(read_string, separated_components);
 
+        char* formattedString = format_string(read_string, buffer_size);
+
+        break_string(formattedString, separated_components);
         //----------------Checking for redirects----------------
         bool redirection = is_redirection(separated_components);
         //---------------------------------------------------------
 
-        if (strcmp(separated_components[0], "exit") == 0 || result == -1) {
+        if (strcmp(separated_components[0], "exit") == 0) {
             if (separated_components[1] != NULL) {
                 print_error();
             } else {
@@ -101,6 +87,10 @@ int main(int argc, char *argv[]) {
     return EXIT_SUCCESS;
 }
 
+int getInput(size_t buffer_size){
+    return (int) getline(&read_string, &buffer_size, stdin);
+}
+
 /**
  * Break an input_string string into components removing the newline if it exists
  * @param input_string input_string string to break
@@ -133,6 +123,7 @@ void exit_shell() {
     fclose(stdout);
     fclose(stderr);
     free(redirect_args);
+    free(read_string);
     exit(EXIT_SUCCESS);
 }
 
@@ -252,4 +243,24 @@ void restructure_components(char *components[]) {
     char *tempstr = strtok(NULL, operator);
     redirect_args = realloc(redirect_args, sizeof(tempstr));
     strcpy(redirect_args, tempstr);
+}
+
+char * format_string(char* input_line, size_t buffer_size){
+    bool exit = false;
+    int i;
+    while (exit == false){
+        int result = getInput(buffer_size);
+        if(result == -1){
+            exit_shell();
+        }
+        for (i = 0; i < strlen(read_string); i++) {
+            if (isspace(read_string[i]) == 0) {
+                break;
+            }
+        }
+        if (i != strlen(read_string)) {
+            exit = true;
+        }
+    }
+    return input_line + i;
 }

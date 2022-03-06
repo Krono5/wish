@@ -31,6 +31,11 @@ bool is_redirection(char *components[]);
 
 void restructure_components(char *components[]);
 
+char *format_string(char *input_line, size_t buffer_size);
+
+int getInput(size_t buffer_size);
+
+
 #define PATH_SIZE 30
 
 #endif //WISH_H
