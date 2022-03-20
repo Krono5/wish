@@ -9,29 +9,34 @@ int main(int argc, char *argv[]) {
     size_t buffer_size = 50;
     bool exit = false;
     char *separated_components[buffer_size];
+    char *parallel_array[buffer_size];
     char command_path[PATH_SIZE];
 
     // set up initial path
     path[0] = "/bin";
     read_string = malloc(buffer_size * sizeof(char));
 
+    // Initialize the components array
     for (int i = 0; i < buffer_size; ++i) {
         separated_components[i] = NULL;
+    }
+    for (int i = 0; i < buffer_size; ++i) {
+        parallel_array[i] = malloc(sizeof(char));
     }
 
     // if there is nothing in the command line, attempt to read file and redirect to stdin
     if (argc != 1) {
-        FILE * input_file = NULL;
+        FILE *input_file = NULL;
         input_file = freopen(argv[1], "r", stdin);
-        if(argv[2] != NULL){
+        if (argv[2] != NULL) {
             // Multiple batch files
             print_error();
             return (EXIT_FAILURE);
-        }else if (input_file == NULL) {
+        } else if (input_file == NULL) {
             // Could not open file
             print_error();
             return (EXIT_FAILURE);
-        } else{
+        } else {
             stdin = input_file;
         }
     }
@@ -41,14 +46,22 @@ int main(int argc, char *argv[]) {
         if (argc == 1) {
             printf("wish> ");
         }
-        // Get input from stdin
+        // Get input from stdin and parse
+        char *formattedString = format_string(read_string, buffer_size);
 
-        char* formattedString = format_string(read_string, buffer_size);
-
+        // Break gotten string into separate components
         break_string(formattedString, separated_components);
+
         //----------------Checking for redirects----------------
         bool redirection = is_redirection(separated_components);
-        //---------------------------------------------------------
+        //------------------------------------------------------
+
+        //--------Checking for compounding statements-----------
+        bool compound = check_parallel(separated_components);
+        if (compound) {
+            split_parallel(separated_components, parallel_array);
+        }
+        //------------------------------------------------------
 
         if (strcmp(separated_components[0], "exit") == 0) {
             if (separated_components[1] != NULL) {
@@ -74,7 +87,16 @@ int main(int argc, char *argv[]) {
                 if (redirection) {
                     creat(redirect_args, S_IRWXU);
                 }
-                execv(command_path, separated_components);
+                if (compound) {
+                    int parallelIndex = 0;
+                    while (parallel_array[parallelIndex] != NULL){
+                        wait(NULL);
+                        execv(command_path, &parallel_array[parallelIndex]);
+                    }
+                } else {
+                    execv(command_path, separated_components);
+                }
+
                 exit = true;
             } else {
                 // in the universe of the parent
@@ -87,11 +109,17 @@ int main(int argc, char *argv[]) {
     return EXIT_SUCCESS;
 }
 
-char * getInput(size_t buffer_size, char* input_line){
-    int result = (int)getline(&input_line, &buffer_size, stdin);
-    if(result == -1){
+/**
+ * Get the input from stdin
+ * @param buffer_size size of the buffer
+ * @param input_line pointer to where line should be stored
+ * @return a pointer to the line read including offsets
+ */
+char *getInput(size_t buffer_size, char *input_line) {
+    int result = (int) getline(&input_line, &buffer_size, stdin);
+    if (result == -1) {
         return NULL;
-    } else{
+    } else {
         return input_line;
     }
 }
@@ -196,6 +224,11 @@ bool check_path(char *check_path, char *components[]) {
     return false;
 }
 
+/**
+ * Check if the command enter contains the redirection character
+ * @param components input arguments to check
+ * @return true if commands contain redirection character
+ */
 bool is_redirection(char *components[]) {
     int i = 0;
     int num_operators = 0;
@@ -238,6 +271,10 @@ bool is_redirection(char *components[]) {
     }
 }
 
+/**
+ * If spaces are in the components near the redirection, fix that to be uniform
+ * @param components command to fix
+ */
 void restructure_components(char *components[]) {
     int i = 0;
     while (strstr(components[i], operator) == NULL) {
@@ -249,21 +286,70 @@ void restructure_components(char *components[]) {
     strcpy(redirect_args, tempstr);
 }
 
-char * format_string(char* input_line, size_t buffer_size){
+/**
+ * If command contains blank space before the command or blank lines, get rid of it
+ * @param input_line pointer of where to store the read line
+ * @param buffer_size how large should the input line be?
+ * @return a pointer to the fixed string
+ */
+char *format_string(char *input_line, size_t buffer_size) {
     bool exit = false;
     int stringIndex;
-    while (exit == false){
+    char *result_line;
+    while (exit == false) {
         stringIndex = 0;
-        input_line = getInput(buffer_size, input_line);
-        if(input_line == NULL){
+        result_line = getInput(buffer_size, input_line);
+        if (result_line == NULL) {
             exit_shell();
         }
-        while (isspace(input_line[stringIndex]) != 0){
+        while (isspace(result_line[stringIndex]) != 0) {
             stringIndex++;
         }
-        if (stringIndex != strlen(input_line)) {
+        if (stringIndex != strlen(result_line)) {
             exit = true;
         }
     }
-    return input_line + stringIndex;
+    return result_line + stringIndex;
+}
+
+bool check_parallel(char *components[]) {
+    int i = 0;
+    int num_operators = 0;
+    const char *compound = "&";
+
+    while (components[i] != NULL) {
+        if (strcmp(components[i], compound) == 0) {
+            num_operators++;
+        }
+        if (strcmp(components[0], compound) == 0 && components[1] == NULL) {
+            exit_shell();
+        }
+        i++;
+    }
+    if (num_operators > 0) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+void split_parallel(char *components[], char *parallel_array[]) {
+    char *delimiter = "&";
+    int componentIndex = 0;
+    int newArrayIndex = 0;
+    bool exit = false;
+
+    while (exit == false) {
+        if (components[componentIndex] == NULL) {
+            exit = true;
+        } else if (strcmp(components[componentIndex], delimiter) != 0) {
+            parallel_array[newArrayIndex] = realloc(parallel_array[newArrayIndex], sizeof(parallel_array[newArrayIndex]) + sizeof(components[componentIndex]) + sizeof(" "));
+            strcat(parallel_array[newArrayIndex], components[componentIndex]);
+            strcat(parallel_array[newArrayIndex], " ");
+            componentIndex++;
+        } else {
+            componentIndex++;
+            newArrayIndex++;
+        }
+    }
 }

@@ -35,6 +35,9 @@ char *format_string(char *input_line, size_t buffer_size);
 
 char *getInput(size_t buffer_size, char *input_line);
 
+bool check_parallel(char *components[]);
+
+void split_parallel(char *components[], char* parallel_array[]);
 
 #define PATH_SIZE 30
 
